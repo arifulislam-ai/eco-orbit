@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 7.4.2.3 (Linux)"/>
+	<meta name="created" content="00:00:00"/>
+	<meta name="changed" content="00:00:00"/>
+	<style type="text/css">
+		@page { size: 8.27in 11.69in; margin: 0.79in }
+		p { line-height: 115%; margin-bottom: 0.1in; background: transparent }
+		pre { background: transparent }
+		pre.western { font-family: "Liberation Mono", monospace; font-size: 10pt }
+		pre.cjk { font-family: "NSimSun", monospace; font-size: 10pt }
+		pre.ctl { font-family: "Liberation Mono", monospace; font-size: 10pt }
+	</style>
+</head>
+<body lang="en-US" link="#000080" vlink="#800000" dir="ltr"><pre class="western">import React, { useState, useEffect } from 'react';
+import { MapPin, Activity, BarChart3, FileText, Settings, LogOut, Bell, Users, TrendingUp, Package, Leaf, Sun, Moon, Mail, Lock, User, Phone, Eye, EyeOff, RefreshCw, Shield } from 'lucide-react';
+
+// Security Code Generator
+function generateSecurityCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i &lt; 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
+// Mock Data Generator
+const generateMockBins = () =&gt; {
+  const locations = [
+    { name: 'Gulshan-1', lat: 23.7808, lng: 90.4179 },
+    { name: 'Banani', lat: 23.7936, lng: 90.4048 },
+    { name: 'Dhanmondi', lat: 23.7461, lng: 90.3742 },
+    { name: 'Mirpur', lat: 23.8223, lng: 90.3654 },
+    { name: 'Uttara', lat: 23.8759, lng: 90.3795 },
+    { name: 'Mohammadpur', lat: 23.7679, lng: 90.3605 },
+    { name: 'Farmgate', lat: 23.7574, lng: 90.3890 },
+    { name: 'Tejgaon', lat: 23.7536, lng: 90.3929 },
+  ];
+
+  return locations.flatMap((loc, idx) =&gt; 
+    Array.from({ length: 5 }, (_, i) =&gt; ({
+      id: `BIN-${idx * 5 + i + 1}`,
+      location: loc.name,
+      lat: loc.lat + (Math.random() - 0.5) * 0.01,
+      lng: loc.lng + (Math.random() - 0.5) * 0.01,
+      fillLevel: Math.floor(Math.random() * 100),
+      status: ['empty', 'half', 'full'][Math.floor(Math.random() * 3)],
+      lastCollection: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      sensorStatus: Math.random() &gt; 0.1 ? 'connected' : 'disconnected'
+    }))
+  );
+};
+
+const generateReports = () =&gt; {
+  const issues = [
+    'Overflowing bin',
+    'Illegal dumping',
+    'Damaged sensor',
+    'Blocked access',
+    'Bad odor'
+  ];
+  
+  return Array.from({ length: 12 }, (_, i) =&gt; ({
+    id: `REP-${String(i + 1).padStart(3, '0')}`,
+    issue: issues[Math.floor(Math.random() * issues.length)],
+    location: ['Gulshan', 'Banani', 'Dhanmondi', 'Mirpur'][Math.floor(Math.random() * 4)],
+    status: ['open', 'investigating', 'resolved'][Math.floor(Math.random() * 3)],
+    time: `${Math.floor(Math.random() * 24)}h ago`,
+    priority: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)],
+    date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-GB'),
+    fullTime: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
+  }));
+};
+
+export default function EcoOrbitDashboard() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authMode, setAuthMode] = useState('login');
+  const [userType, setUserType] = useState('member');
+  const [showPassword, setShowPassword] = useState(false);
+  const [securityCode, setSecurityCode] = useState('');
+  const [generatedCode, setGeneratedCode] = useState(generateSecurityCode());
+  const [authFormData, setAuthFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    phone: '',
+    organization: '',
+    address: ''
+  });
+  
+  const [currentPage, setCurrentPage] = useState('home');
+  const [bins, setBins] = useState([]);
+  const [reports, setReports] = useState([]);
+  const [theme, setTheme] = useState('dark');
+  const [stats, setStats] = useState({
+    totalBins: 0,
+    fullBins: 0,
+    activeReports: 0,
+    co2Saved: 23
+  });
+
+  useEffect(() =&gt; {
+    const mockBins = generateMockBins();
+    const mockReports = generateReports();
+    
+    setBins(mockBins);
+    setReports(mockReports);
+    
+    setStats({
+      totalBins: 40,
+      fullBins: 13,
+      activeReports: 8,
+      co2Saved: 23
+    });
+  }, []);
+
+  const handleAuthInputChange = (e) =&gt; {
+    setAuthFormData({
+      ...authFormData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const refreshSecurityCode = () =&gt; {
+    setGeneratedCode(generateSecurityCode());
+    setSecurityCode('');
+  };
+
+  const validateAuthForm = () =&gt; {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(authFormData.email)) {
+      alert('❌ Please enter a valid email address!');
+      return false;
+    }
+
+    if (authFormData.password.length &lt; 8) {
+      alert('❌ Password must be at least 8 characters long!');
+      return false;
+    }
+
+    if (securityCode.toUpperCase() !== generatedCode) {
+      alert('❌ Security code is incorrect!');
+      return false;
+    }
+
+    if (authMode === 'register') {
+      if (authFormData.name.trim().length &lt; 3) {
+        alert('❌ Name must be at least 3 characters long!');
+        return false;
+      }
+
+      const phoneRegex = /^[+]?[0-9]{10,15}$/;
+      if (!phoneRegex.test(authFormData.phone.replace(/[\s-]/g, ''))) {
+        alert('❌ Please enter a valid phone number!');
+        return false;
+      }
+
+      if (authFormData.password !== authFormData.confirmPassword) {
+        alert('❌ Passwords do not match!');
+        return false;
+      }
+
+      if (userType === 'admin' &amp;&amp; (!authFormData.organization || authFormData.organization.trim().length &lt; 3)) {
+        alert('❌ Organization name is required for admin accounts!');
+        return false;
+      }
+
+      if (!authFormData.address || authFormData.address.trim().length &lt; 5) {
+        alert('❌ Please enter a valid address!');
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleAuthSubmit = () =&gt; {
+    if (!validateAuthForm()) {
+      return;
+    }
+
+    if (authMode === 'login') {
+      console.log('Login:', { email: authFormData.email, userType });
+      alert('✅ Login successful as ' + userType + '!');
+      setIsAuthenticated(true);
+    } else {
+      console.log('Register:', authFormData, userType);
+      alert('✅ Registration successful as ' + userType + '!');
+      setIsAuthenticated(true);
+    }
+  };
+
+  const handleLogout = () =&gt; {
+    setIsAuthenticated(false);
+    setAuthFormData({
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+      phone: '',
+      organization: '',
+      address: ''
+    });
+    setSecurityCode('');
+    refreshSecurityCode();
+  };
+
+  const Sidebar = () =&gt; (
+    &lt;div className=&quot;w-72 bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700 flex flex-col&quot;&gt;
+      &lt;div className=&quot;p-6 border-b border-slate-700&quot;&gt;
+        &lt;div className=&quot;flex items-center gap-3&quot;&gt;
+          &lt;div className=&quot;w-12 h-12 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-xl flex items-center justify-center&quot;&gt;
+            &lt;Leaf className=&quot;w-7 h-7 text-white&quot; /&gt;
+          &lt;/div&gt;
+          &lt;div&gt;
+            &lt;h1 className=&quot;text-xl font-bold text-white&quot;&gt;EcoOrbit&lt;/h1&gt;
+            &lt;p className=&quot;text-xs text-slate-400&quot;&gt;Smart Waste Management&lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;nav className=&quot;flex-1 p-4 space-y-2&quot;&gt;
+        {[
+          { id: 'home', icon: Activity, label: 'Home' },
+          { id: 'map', icon: MapPin, label: 'Live Bin Map' },
+          { id: 'analytics', icon: BarChart3, label: 'Analytics' },
+          { id: 'reports', icon: FileText, label: 'Reports' },
+          { id: 'admin', icon: Settings, label: 'Admin' },
+        ].map(item =&gt; (
+          &lt;button
+            key={item.id}
+            onClick={() =&gt; setCurrentPage(item.id)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+              currentPage === item.id
+                ? 'bg-gradient-to-r from-purple-500/20 to-cyan-500/20 text-white border border-purple-500/30'
+                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            }`}
+          &gt;
+            &lt;item.icon className=&quot;w-5 h-5&quot; /&gt;
+            &lt;span className=&quot;font-medium&quot;&gt;{item.label}&lt;/span&gt;
+          &lt;/button&gt;
+        ))}
+      &lt;/nav&gt;
+
+      &lt;div className=&quot;p-4 border-t border-slate-700&quot;&gt;
+        &lt;button className=&quot;w-full flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-all&quot;&gt;
+          &lt;LogOut className=&quot;w-5 h-5&quot; /&gt;
+          &lt;span className=&quot;font-medium&quot;&gt;Logout&lt;/span&gt;
+        &lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+
+  const StatCard = ({ title, value, icon: Icon, color }) =&gt; (
+    &lt;div className=&quot;bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700 hover:border-purple-500/50 transition-all flex-1 min-w-[200px]&quot;&gt;
+      &lt;div className=&quot;flex items-start justify-between mb-4&quot;&gt;
+        &lt;div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${color} flex items-center justify-center`}&gt;
+          &lt;Icon className=&quot;w-6 h-6 text-white&quot; /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div className=&quot;text-3xl font-bold text-white mb-1&quot;&gt;{value}&lt;/div&gt;
+      &lt;div className=&quot;text-sm text-slate-400&quot;&gt;{title}&lt;/div&gt;
+    &lt;/div&gt;
+  );
+
+  const HomePage = () =&gt; (
+    &lt;div className=&quot;space-y-6&quot;&gt;
+      &lt;div className=&quot;flex gap-6 overflow-x-auto&quot;&gt;
+        &lt;StatCard 
+          title=&quot;Total Bins&quot; 
+          value={stats.totalBins} 
+          icon={Package}
+          color=&quot;from-purple-500 to-purple-600&quot;
+        /&gt;
+        &lt;StatCard 
+          title=&quot;Full Bins&quot; 
+          value={stats.fullBins} 
+          icon={Activity}
+          color=&quot;from-red-500 to-red-600&quot;
+        /&gt;
+        &lt;StatCard 
+          title=&quot;Active Reports&quot; 
+          value={stats.activeReports} 
+          icon={FileText}
+          color=&quot;from-orange-500 to-orange-600&quot;
+        /&gt;
+        &lt;StatCard 
+          title=&quot;CO₂ Saved&quot; 
+          value={`${stats.co2Saved}%`} 
+          icon={Leaf}
+          color=&quot;from-green-500 to-green-600&quot;
+        /&gt;
+      &lt;/div&gt;
+
+      &lt;div className=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6&quot;&gt;
+        &lt;div className={`${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'} backdrop-blur-sm rounded-xl p-6 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}&gt;
+          &lt;div className=&quot;flex items-center justify-between mb-4&quot;&gt;
+            &lt;h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;Satellite Waste Monitoring&lt;/h2&gt;
+            &lt;span className=&quot;px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-xs font-medium border border-blue-500/30&quot;&gt;
+              NASA EcoOrbit
+            &lt;/span&gt;
+          &lt;/div&gt;
+          
+          &lt;div className={`h-64 bg-gradient-to-br ${theme === 'dark' ? 'from-slate-900 via-blue-900/20 to-slate-900' : 'from-blue-50 via-cyan-50 to-blue-50'} rounded-lg flex items-center justify-center border ${theme === 'dark' ? 'border-slate-700' : 'border-blue-200'} relative overflow-hidden`}&gt;
+            &lt;div className=&quot;absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]&quot;&gt;&lt;/div&gt;
+            &lt;div className=&quot;text-center relative z-10&quot;&gt;
+              &lt;div className=&quot;relative mb-4&quot;&gt;
+                &lt;div className=&quot;absolute inset-0 bg-blue-500/20 blur-2xl rounded-full&quot;&gt;&lt;/div&gt;
+                &lt;MapPin className=&quot;w-16 h-16 text-blue-400 mx-auto relative animate-pulse&quot; /&gt;
+              &lt;/div&gt;
+              &lt;p className={`text-base font-semibold mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}&gt;Earth Observation System&lt;/p&gt;
+              &lt;p className={`text-xs mb-3 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}&gt;Real-time satellite imagery &amp; hotspot detection&lt;/p&gt;
+              &lt;div className=&quot;flex items-center justify-center gap-4 text-xs&quot;&gt;
+                &lt;div className=&quot;flex items-center gap-2&quot;&gt;
+                  &lt;div className=&quot;w-2 h-2 bg-green-400 rounded-full animate-pulse&quot;&gt;&lt;/div&gt;
+                  &lt;span className={theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}&gt;Satellite Active&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;div className=&quot;flex items-center gap-2&quot;&gt;
+                  &lt;div className=&quot;w-2 h-2 bg-blue-400 rounded-full animate-pulse&quot;&gt;&lt;/div&gt;
+                  &lt;span className={theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}&gt;Live Data Feed&lt;/span&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div className={`absolute top-3 left-3 text-xs font-mono ${theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}`}&gt;
+              LAT: 23.7808° N | LON: 90.4179° E
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div className={`${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'} backdrop-blur-sm rounded-xl p-6 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}&gt;
+          &lt;div className=&quot;flex items-center justify-between mb-4&quot;&gt;
+            &lt;h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;Live Bin Map&lt;/h2&gt;
+            &lt;div className=&quot;flex gap-2&quot;&gt;
+              &lt;button className={`px-3 py-1.5 rounded-lg text-xs ${theme === 'dark' ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}&gt;
+                Zoom In
+              &lt;/button&gt;
+              &lt;button className={`px-3 py-1.5 rounded-lg text-xs ${theme === 'dark' ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}&gt;
+                Zoom Out
+              &lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          
+          &lt;div className={`h-64 rounded-lg border p-4 flex flex-col items-center justify-center ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50 border-gray-200'}`}&gt;
+            &lt;MapPin className=&quot;w-16 h-16 text-purple-500 mb-3&quot; /&gt;
+            &lt;p className={`text-base mb-1 ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}&gt;Interactive Map&lt;/p&gt;
+            &lt;p className={`text-xs mb-4 ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}&gt;{bins.length} smart bins across Dhaka&lt;/p&gt;
+            
+            &lt;div className=&quot;grid grid-cols-3 gap-2 w-full max-w-sm&quot;&gt;
+              &lt;div className=&quot;text-center p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/30&quot;&gt;
+                &lt;div className=&quot;w-3 h-3 bg-cyan-500 rounded-full mx-auto mb-1&quot;&gt;&lt;/div&gt;
+                &lt;p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}&gt;Empty&lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;text-center p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/30&quot;&gt;
+                &lt;div className=&quot;w-3 h-3 bg-yellow-500 rounded-full mx-auto mb-1&quot;&gt;&lt;/div&gt;
+                &lt;p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}&gt;Half Full&lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;text-center p-2 bg-red-500/10 rounded-lg border border-red-500/30&quot;&gt;
+                &lt;div className=&quot;w-3 h-3 bg-red-500 rounded-full mx-auto mb-1&quot;&gt;&lt;/div&gt;
+                &lt;p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}&gt;Full&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div className=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6&quot;&gt;
+        &lt;div className={`${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'} backdrop-blur-sm rounded-xl p-6 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}&gt;
+          &lt;h2 className={`text-xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;Daily Waste Trend&lt;/h2&gt;
+          &lt;div className={`h-64 rounded-lg flex items-center justify-center border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-gray-50 border-gray-200'}`}&gt;
+            &lt;div className=&quot;text-center&quot;&gt;
+              &lt;TrendingUp className=&quot;w-12 h-12 text-purple-500 mx-auto mb-3&quot; /&gt;
+              &lt;p className={theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}&gt;Waste collection trending upward&lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div className={`${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'} backdrop-blur-sm rounded-xl p-6 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}&gt;
+          &lt;h2 className={`text-xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;Environmental Impact&lt;/h2&gt;
+          &lt;div className=&quot;grid grid-cols-3 gap-4&quot;&gt;
+            &lt;div className=&quot;text-center&quot;&gt;
+              &lt;div className=&quot;text-4xl font-bold text-green-400 mb-2&quot;&gt;23%&lt;/div&gt;
+              &lt;p className={theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}&gt;CO₂ Reduction&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;text-center&quot;&gt;
+              &lt;div className=&quot;text-4xl font-bold text-blue-400 mb-2&quot;&gt;15%&lt;/div&gt;
+              &lt;p className={theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}&gt;Fuel Saved&lt;/p&gt;
+            &lt;/div&gt;
+            &lt;div className=&quot;text-center&quot;&gt;
+              &lt;div className=&quot;text-4xl font-bold text-purple-400 mb-2&quot;&gt;89%&lt;/div&gt;
+              &lt;p className={theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}&gt;Route Efficiency&lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div className={`${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'} backdrop-blur-sm rounded-xl p-6 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}&gt;
+        &lt;div className=&quot;flex gap-3 justify-center&quot;&gt;
+          &lt;button className=&quot;px-6 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90 transition-opacity&quot;&gt;
+            Dispatch Collection
+          &lt;/button&gt;
+          &lt;button className={`px-6 py-3 rounded-lg font-medium transition-colors border ${theme === 'dark' ? 'border-slate-600 text-slate-300 hover:bg-slate-700' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}&gt;
+            Export Report
+          &lt;/button&gt;
+          &lt;button className={`px-6 py-3 rounded-lg font-medium transition-colors border ${theme === 'dark' ? 'border-slate-600 text-slate-300 hover:bg-slate-700' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}&gt;
+            View All Bins
+          &lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+
+  const MapPage = () =&gt; (
+    &lt;div className=&quot;space-y-6&quot;&gt;
+      &lt;div className=&quot;grid grid-cols-1 lg:grid-cols-3 gap-6&quot;&gt;
+        &lt;div className=&quot;lg:col-span-2 bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700&quot;&gt;
+          &lt;div className=&quot;flex items-center justify-between mb-6&quot;&gt;
+            &lt;h2 className=&quot;text-2xl font-bold text-white&quot;&gt;Live Bin Map&lt;/h2&gt;
+            &lt;div className=&quot;flex gap-2&quot;&gt;
+              &lt;button className=&quot;px-4 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600&quot;&gt;
+                Zoom In
+              &lt;/button&gt;
+              &lt;button className=&quot;px-4 py-2 bg-slate-700 text-white rounded-lg text-sm hover:bg-slate-600&quot;&gt;
+                Zoom Out
+              &lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          
+          &lt;div className=&quot;bg-slate-900/50 rounded-lg border border-slate-700 p-8&quot;&gt;
+            &lt;div className=&quot;text-center mb-6&quot;&gt;
+              &lt;MapPin className=&quot;w-20 h-20 text-purple-500 mx-auto mb-4&quot; /&gt;
+              &lt;p className=&quot;text-slate-300 text-lg&quot;&gt;Interactive Map with Real-Time Updates&lt;/p&gt;
+              &lt;p className=&quot;text-slate-500 text-sm mt-2&quot;&gt;Showing {bins.length} smart bins across Dhaka&lt;/p&gt;
+            &lt;/div&gt;
+            
+            &lt;div className=&quot;grid grid-cols-3 gap-4 max-w-md mx-auto&quot;&gt;
+              &lt;div className=&quot;text-center p-4 bg-cyan-500/10 rounded-lg border border-cyan-500/30&quot;&gt;
+                &lt;div className=&quot;w-4 h-4 bg-cyan-500 rounded-full mx-auto mb-2&quot;&gt;&lt;/div&gt;
+                &lt;p className=&quot;text-xs text-slate-400&quot;&gt;Empty&lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;text-center p-4 bg-yellow-500/10 rounded-lg border border-yellow-500/30&quot;&gt;
+                &lt;div className=&quot;w-4 h-4 bg-yellow-500 rounded-full mx-auto mb-2&quot;&gt;&lt;/div&gt;
+                &lt;p className=&quot;text-xs text-slate-400&quot;&gt;Half Full&lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div className=&quot;text-center p-4 bg-red-500/10 rounded-lg border border-red-500/30&quot;&gt;
+                &lt;div className=&quot;w-4 h-4 bg-red-500 rounded-full mx-auto mb-2&quot;&gt;&lt;/div&gt;
+                &lt;p className=&quot;text-xs text-slate-400&quot;&gt;Full&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div className=&quot;bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700&quot;&gt;
+          &lt;h2 className=&quot;text-xl font-bold text-white mb-6&quot;&gt;Bin Status&lt;/h2&gt;
+          
+          &lt;div className=&quot;space-y-4 mb-6&quot;&gt;
+            &lt;div className=&quot;flex items-center justify-between p-3 bg-slate-900/50 rounded-lg&quot;&gt;
+              &lt;div className=&quot;flex items-center gap-3&quot;&gt;
+                &lt;div className=&quot;w-3 h-3 rounded-full bg-cyan-500&quot;&gt;&lt;/div&gt;
+                &lt;span className=&quot;text-slate-300&quot;&gt;Empty&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;span className=&quot;text-white font-bold&quot;&gt;
+                {bins.filter(b =&gt; b.status === 'empty').length}
+              &lt;/span&gt;
+            &lt;/div&gt;
+            
+            &lt;div className=&quot;flex items-center justify-between p-3 bg-slate-900/50 rounded-lg&quot;&gt;
+              &lt;div className=&quot;flex items-center gap-3&quot;&gt;
+                &lt;div className=&quot;w-3 h-3 rounded-full bg-yellow-500&quot;&gt;&lt;/div&gt;
+                &lt;span className=&quot;text-slate-300&quot;&gt;Half Full&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;span className=&quot;text-white font-bold&quot;&gt;
+                {bins.filter(b =&gt; b.status === 'half').length}
+              &lt;/span&gt;
+            &lt;/div&gt;
+            
+            &lt;div className=&quot;flex items-center justify-between p-3 bg-slate-900/50 rounded-lg&quot;&gt;
+              &lt;div className=&quot;flex items-center gap-3&quot;&gt;
+                &lt;div className=&quot;w-3 h-3 rounded-full bg-red-500&quot;&gt;&lt;/div&gt;
+                &lt;span className=&quot;text-slate-300&quot;&gt;Full&lt;/span&gt;
+              &lt;/div&gt;
+              &lt;span className=&quot;text-white font-bold&quot;&gt;
+                {bins.filter(b =&gt; b.status === 'full').length}
+              &lt;/span&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div className=&quot;space-y-3&quot;&gt;
+            &lt;button className=&quot;w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90&quot;&gt;
+              Dispatch Collection
+            &lt;/button&gt;
+            &lt;button className=&quot;w-full px-4 py-3 border border-slate-600 text-slate-300 rounded-lg font-medium hover:bg-slate-700&quot;&gt;
+              View Details
+            &lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+
+  const AnalyticsPage = () =&gt; (
+    &lt;div className=&quot;space-y-6&quot;&gt;
+      &lt;div className=&quot;grid grid-cols-1 lg:grid-cols-3 gap-6&quot;&gt;
+        &lt;div className=&quot;lg:col-span-2 space-y-6&quot;&gt;
+          &lt;div className={`${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'} backdrop-blur-sm rounded-xl p-6 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}&gt;
+            &lt;div className=&quot;flex items-center justify-between mb-6&quot;&gt;
+              &lt;h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;Trash Locations&lt;/h2&gt;
+              &lt;button className={`px-4 py-2 rounded-lg text-sm font-medium ${theme === 'dark' ? 'bg-slate-700 text-white hover:bg-slate-600' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}&gt;
+                View All
+              &lt;/button&gt;
+            &lt;/div&gt;
+            
+            &lt;div className=&quot;grid grid-cols-1 md:grid-cols-2 gap-4&quot;&gt;
+              {bins.slice(0, 8).map(bin =&gt; (
+                &lt;div key={bin.id} className={`p-4 rounded-lg border ${theme === 'dark' ? 'bg-slate-900/50 border-slate-700 hover:border-purple-500/50' : 'bg-gray-50 border-gray-200 hover:border-purple-400'} transition-all`}&gt;
+                  &lt;div className=&quot;flex items-start justify-between mb-3&quot;&gt;
+                    &lt;div&gt;
+                      &lt;p className={`text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;{bin.id}&lt;/p&gt;
+                      &lt;p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}&gt;{bin.location}&lt;/p&gt;
+                    &lt;/div&gt;
+                    &lt;div className={`w-3 h-3 rounded-full ${
+                      bin.status === 'empty' ? 'bg-cyan-500' :
+                      bin.status === 'half' ? 'bg-yellow-500' : 'bg-red-500'
+                    }`}&gt;&lt;/div&gt;
+                  &lt;/div&gt;
+                  
+                  &lt;div className=&quot;space-y-2&quot;&gt;
+                    &lt;div className=&quot;flex items-center justify-between text-xs&quot;&gt;
+                      &lt;span className={theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}&gt;Fill Level&lt;/span&gt;
+                      &lt;span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;{bin.fillLevel}%&lt;/span&gt;
+                    &lt;/div&gt;
+                    &lt;div className={`w-full rounded-full h-2 ${theme === 'dark' ? 'bg-slate-700' : 'bg-gray-200'}`}&gt;
+                      &lt;div 
+                        className={`h-2 rounded-full ${
+                          bin.fillLevel &gt; 75 ? 'bg-red-500' :
+                          bin.fillLevel &gt; 40 ? 'bg-yellow-500' : 'bg-cyan-500'
+                        }`}
+                        style={{width: `${bin.fillLevel}%`}}
+                      &gt;&lt;/div&gt;
+                    &lt;/div&gt;
+                    
+                    &lt;div className=&quot;flex items-center justify-between text-xs pt-2&quot;&gt;
+                      &lt;span className={theme === 'dark' ? 'text-slate-500' : 'text-gray-400'}&gt;Sensor&lt;/span&gt;
+                      &lt;span className={`px-2 py-1 rounded-full text-xs ${
+                        bin.sensorStatus === 'connected' 
+                          ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                          : 'bg-red-500/20 text-red-400 border border-red-500/30'
+                      }`}&gt;
+                        {bin.sensorStatus === 'connected' ? 'Online' : 'Offline'}
+                      &lt;/span&gt;
+                    &lt;/div&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              ))}
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div className={`${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'} backdrop-blur-sm rounded-xl p-6 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}&gt;
+            &lt;h2 className={`text-xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;Top 10 Busiest Bins&lt;/h2&gt;
+            &lt;div className=&quot;space-y-2&quot;&gt;
+              {bins.slice(0, 10).map((bin, idx) =&gt; (
+                &lt;div key={bin.id} className={`flex items-center justify-between p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-gray-50'}`}&gt;
+                  &lt;span className={theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}&gt;{idx + 1}. {bin.location}&lt;/span&gt;
+                  &lt;span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;{bin.fillLevel}%&lt;/span&gt;
+                &lt;/div&gt;
+              ))}
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div className=&quot;space-y-6&quot;&gt;
+          &lt;div className={`${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'} backdrop-blur-sm rounded-xl p-6 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}&gt;
+            &lt;h2 className={`text-xl font-bold mb-6 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;Bin Status&lt;/h2&gt;
+            
+            &lt;div className=&quot;space-y-4 mb-6&quot;&gt;
+              &lt;div className={`flex items-center justify-between p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-gray-50'}`}&gt;
+                &lt;div className=&quot;flex items-center gap-3&quot;&gt;
+                  &lt;div className=&quot;w-3 h-3 rounded-full bg-cyan-500&quot;&gt;&lt;/div&gt;
+                  &lt;span className={theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}&gt;Empty&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;
+                  {bins.filter(b =&gt; b.status === 'empty').length}
+                &lt;/span&gt;
+              &lt;/div&gt;
+              
+              &lt;div className={`flex items-center justify-between p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-gray-50'}`}&gt;
+                &lt;div className=&quot;flex items-center gap-3&quot;&gt;
+                  &lt;div className=&quot;w-3 h-3 rounded-full bg-yellow-500&quot;&gt;&lt;/div&gt;
+                  &lt;span className={theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}&gt;Half Full&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;
+                  {bins.filter(b =&gt; b.status === 'half').length}
+                &lt;/span&gt;
+              &lt;/div&gt;
+              
+              &lt;div className={`flex items-center justify-between p-3 rounded-lg ${theme === 'dark' ? 'bg-slate-900/50' : 'bg-gray-50'}`}&gt;
+                &lt;div className=&quot;flex items-center gap-3&quot;&gt;
+                  &lt;div className=&quot;w-3 h-3 rounded-full bg-red-500&quot;&gt;&lt;/div&gt;
+                  &lt;span className={theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}&gt;Full&lt;/span&gt;
+                &lt;/div&gt;
+                &lt;span className={`font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;
+                  {bins.filter(b =&gt; b.status === 'full').length}
+                &lt;/span&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;div className=&quot;space-y-3&quot;&gt;
+              &lt;button className=&quot;w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90&quot;&gt;
+                View Details
+              &lt;/button&gt;
+              &lt;button className={`w-full px-4 py-3 rounded-lg font-medium border ${theme === 'dark' ? 'border-slate-600 text-slate-300 hover:bg-slate-700' : 'border-gray-300 text-gray-700 hover:bg-gray-100'}`}&gt;
+                Export Data
+              &lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div className={`${theme === 'dark' ? 'bg-slate-800/50' : 'bg-white'} backdrop-blur-sm rounded-xl p-6 border ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}&gt;
+            &lt;div className=&quot;flex items-center justify-between mb-6&quot;&gt;
+              &lt;h2 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;Live Updates&lt;/h2&gt;
+              &lt;div className=&quot;flex items-center gap-2&quot;&gt;
+                &lt;div className=&quot;w-2 h-2 bg-green-400 rounded-full animate-pulse&quot;&gt;&lt;/div&gt;
+                &lt;span className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}&gt;Live&lt;/span&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            
+            &lt;div className=&quot;space-y-3&quot;&gt;
+              &lt;div className=&quot;p-3 bg-green-500/10 rounded-lg border border-green-500/30&quot;&gt;
+                &lt;div className=&quot;flex items-start gap-3&quot;&gt;
+                  &lt;div className=&quot;w-2 h-2 bg-green-400 rounded-full mt-1.5&quot;&gt;&lt;/div&gt;
+                  &lt;div className=&quot;flex-1&quot;&gt;
+                    &lt;p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}&gt;Bin Emptied&lt;/p&gt;
+                    &lt;p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}&gt;Gulshan-2 • 2 min ago&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+
+              &lt;div className=&quot;p-3 bg-yellow-500/10 rounded-lg border border-yellow-500/30&quot;&gt;
+                &lt;div className=&quot;flex items-start gap-3&quot;&gt;
+                  &lt;div className=&quot;w-2 h-2 bg-yellow-400 rounded-full mt-1.5&quot;&gt;&lt;/div&gt;
+                  &lt;div className=&quot;flex-1&quot;&gt;
+                    &lt;p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}&gt;Bin Half Full&lt;/p&gt;
+                    &lt;p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}&gt;Banani • 8 min ago&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+
+              &lt;div className=&quot;p-3 bg-red-500/10 rounded-lg border border-red-500/30&quot;&gt;
+                &lt;div className=&quot;flex items-start gap-3&quot;&gt;
+                  &lt;div className=&quot;w-2 h-2 bg-red-400 rounded-full mt-1.5&quot;&gt;&lt;/div&gt;
+                  &lt;div className=&quot;flex-1&quot;&gt;
+                    &lt;p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}&gt;Bin Full Alert&lt;/p&gt;
+                    &lt;p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}&gt;Dhanmondi • 12 min ago&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+
+              &lt;div className=&quot;p-3 bg-blue-500/10 rounded-lg border border-blue-500/30&quot;&gt;
+                &lt;div className=&quot;flex items-start gap-3&quot;&gt;
+                  &lt;div className=&quot;w-2 h-2 bg-blue-400 rounded-full mt-1.5&quot;&gt;&lt;/div&gt;
+                  &lt;div className=&quot;flex-1&quot;&gt;
+                    &lt;p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}&gt;New Report Filed&lt;/p&gt;
+                    &lt;p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}&gt;Mirpur • 15 min ago&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+
+              &lt;div className=&quot;p-3 bg-purple-500/10 rounded-lg border border-purple-500/30&quot;&gt;
+                &lt;div className=&quot;flex items-start gap-3&quot;&gt;
+                  &lt;div className=&quot;w-2 h-2 bg-purple-400 rounded-full mt-1.5&quot;&gt;&lt;/div&gt;
+                  &lt;div className=&quot;flex-1&quot;&gt;
+                    &lt;p className={`text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-gray-700'}`}&gt;Collection Started&lt;/p&gt;
+                    &lt;p className={`text-xs mt-1 ${theme === 'dark' ? 'text-slate-500' : 'text-gray-500'}`}&gt;Uttara • 18 min ago&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+
+  const ReportsPage = () =&gt; (
+    &lt;div className=&quot;bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700&quot;&gt;
+      &lt;div className=&quot;flex items-center justify-between mb-6&quot;&gt;
+        &lt;h2 className=&quot;text-2xl font-bold text-white&quot;&gt;Citizen Reports&lt;/h2&gt;
+        &lt;button className=&quot;px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90&quot;&gt;
+          Export All Reports
+        &lt;/button&gt;
+      &lt;/div&gt;
+      
+      &lt;div className=&quot;grid gap-4&quot;&gt;
+        {reports.map(report =&gt; (
+          &lt;div key={report.id} className=&quot;p-6 bg-slate-900/50 rounded-lg border border-slate-700 hover:border-purple-500/50 transition-all&quot;&gt;
+            &lt;div className=&quot;flex items-start justify-between mb-4&quot;&gt;
+              &lt;div className=&quot;flex-1&quot;&gt;
+                &lt;div className=&quot;flex items-center gap-3 mb-3&quot;&gt;
+                  &lt;span className=&quot;px-3 py-1 bg-slate-700 text-slate-300 rounded-lg text-sm font-mono&quot;&gt;
+                    {report.id}
+                  &lt;/span&gt;
+                  &lt;h3 className=&quot;text-lg font-bold text-white&quot;&gt;{report.issue}&lt;/h3&gt;
+                  &lt;span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    report.priority === 'high' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+                    report.priority === 'medium' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                    'bg-blue-500/20 text-blue-400 border border-blue-500/30'
+                  }`}&gt;
+                    {report.priority}
+                  &lt;/span&gt;
+                &lt;/div&gt;
+                
+                &lt;div className=&quot;grid grid-cols-3 gap-4 mb-3&quot;&gt;
+                  &lt;div&gt;
+                    &lt;p className=&quot;text-xs text-slate-500 mb-1&quot;&gt;Location&lt;/p&gt;
+                    &lt;p className=&quot;text-slate-300 font-medium&quot;&gt;{report.location}&lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;p className=&quot;text-xs text-slate-500 mb-1&quot;&gt;Date &amp; Time&lt;/p&gt;
+                    &lt;p className=&quot;text-slate-300 font-medium&quot;&gt;{report.fullTime}&lt;/p&gt;
+                  &lt;/div&gt;
+                  &lt;div&gt;
+                    &lt;p className=&quot;text-xs text-slate-500 mb-1&quot;&gt;Status&lt;/p&gt;
+                    &lt;span className={`inline-block px-3 py-1 rounded-lg text-sm font-medium ${
+                      report.status === 'resolved' ? 'bg-green-500/20 text-green-400 border border-green-500/30' :
+                      report.status === 'investigating' ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30' :
+                      'bg-red-500/20 text-red-400 border border-red-500/30'
+                    }`}&gt;
+                      {report.status}
+                    &lt;/span&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                
+                &lt;p className=&quot;text-xs text-slate-500&quot;&gt;Reported {report.time}&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            
+            &lt;div className=&quot;flex gap-2 pt-3 border-t border-slate-700&quot;&gt;
+              &lt;button className=&quot;px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors&quot;&gt;
+                View Details
+              &lt;/button&gt;
+              &lt;button className=&quot;px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors&quot;&gt;
+                Update Status
+              &lt;/button&gt;
+              &lt;button className=&quot;px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm transition-colors&quot;&gt;
+                Assign Team
+              &lt;/button&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+
+  const AdminPage = () =&gt; (
+    &lt;div className=&quot;space-y-6&quot;&gt;
+      &lt;div className=&quot;grid grid-cols-1 lg:grid-cols-2 gap-6&quot;&gt;
+        &lt;div className=&quot;bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700&quot;&gt;
+          &lt;h2 className=&quot;text-xl font-bold text-white mb-6&quot;&gt;Bin Management&lt;/h2&gt;
+          &lt;div className=&quot;space-y-3&quot;&gt;
+            &lt;button className=&quot;w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90&quot;&gt;
+              Add New Bin
+            &lt;/button&gt;
+            &lt;button className=&quot;w-full px-4 py-3 border border-slate-600 text-slate-300 rounded-lg font-medium hover:bg-slate-700&quot;&gt;
+              Edit Bin Locations
+            &lt;/button&gt;
+            &lt;button className=&quot;w-full px-4 py-3 border border-slate-600 text-slate-300 rounded-lg font-medium hover:bg-slate-700&quot;&gt;
+              Remove Bin
+            &lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div className=&quot;bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700&quot;&gt;
+          &lt;h2 className=&quot;text-xl font-bold text-white mb-6&quot;&gt;Team Management&lt;/h2&gt;
+          &lt;div className=&quot;space-y-3&quot;&gt;
+            &lt;button className=&quot;w-full px-4 py-3 bg-gradient-to-r from-purple-500 to-cyan-500 text-white rounded-lg font-medium hover:opacity-90&quot;&gt;
+              Add Team Member
+            &lt;/button&gt;
+            &lt;button className=&quot;w-full px-4 py-3 border border-slate-600 text-slate-300 rounded-lg font-medium hover:bg-slate-700&quot;&gt;
+              Manage Permissions
+            &lt;/button&gt;
+            &lt;button className=&quot;w-full px-4 py-3 border border-slate-600 text-slate-300 rounded-lg font-medium hover:bg-slate-700&quot;&gt;
+              View Activity Logs
+            &lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;div className=&quot;bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700&quot;&gt;
+        &lt;h2 className=&quot;text-xl font-bold text-white mb-6&quot;&gt;System Configuration&lt;/h2&gt;
+        &lt;div className=&quot;grid grid-cols-2 gap-4&quot;&gt;
+          &lt;div className=&quot;p-4 bg-slate-900/50 rounded-lg&quot;&gt;
+            &lt;p className=&quot;text-slate-400 text-sm mb-2&quot;&gt;API Status&lt;/p&gt;
+            &lt;p className=&quot;text-green-400 font-bold&quot;&gt;Connected&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;div className=&quot;p-4 bg-slate-900/50 rounded-lg&quot;&gt;
+            &lt;p className=&quot;text-slate-400 text-sm mb-2&quot;&gt;Sensors Online&lt;/p&gt;
+            &lt;p className=&quot;text-white font-bold&quot;&gt;{bins.filter(b =&gt; b.sensorStatus === 'connected').length}/{bins.length}&lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+
+  return (
+    &lt;div className={`flex flex-col h-screen ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-gray-50 text-gray-900'} overflow-hidden`}&gt;
+      &lt;header className={`${theme === 'dark' ? 'bg-slate-900/50 border-slate-700' : 'bg-white border-gray-200'} backdrop-blur-sm border-b px-8 py-4`}&gt;
+        &lt;div className=&quot;flex items-center justify-between&quot;&gt;
+          &lt;div className=&quot;flex items-center gap-8&quot;&gt;
+            &lt;div className=&quot;flex items-center gap-3&quot;&gt;
+              &lt;div className=&quot;w-10 h-10 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-lg flex items-center justify-center&quot;&gt;
+                &lt;Leaf className=&quot;w-6 h-6 text-white&quot; /&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;h1 className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}&gt;EcoOrbit&lt;/h1&gt;
+                &lt;p className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-gray-500'}`}&gt;Smart Waste Management&lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+
+            &lt;nav className=&quot;flex items-center gap-2&quot;&gt;
+              {[
+                { id: 'home', icon: Activity, label: 'Home' },
+                { id: 'analytics', icon: BarChart3, label: 'Analytics' },
+                { id: 'reports', icon: FileText, label: 'Reports' },
+                { id: 'admin', icon: Settings, label: 'Admin' },
+              ].map(item =&gt; (
+                &lt;button
+                  key={item.id}
+                  onClick={() =&gt; {
+                    if (item.id !== 'home' &amp;&amp; !isAuthenticated) {
+                      alert('⚠️ Please login to access ' + item.label);
+                      return;
+                    }
+                    setCurrentPage(item.id);
+                  }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all ${
+                    currentPage === item.id
+                      ? 'bg-gradient-to-r from-purple-500/20 to-cyan-500/20 border border-purple-500/30' + (theme === 'dark' ? ' text-white' : ' text-gray-900')
+                      : (theme === 'dark' ? 'text-slate-400 hover:bg-slate-800 hover:text-white' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900')
+                  }`}
+                &gt;
+                  &lt;item.icon className=&quot;w-4 h-4&quot; /&gt;
+                  &lt;span className=&quot;font-medium text-sm&quot;&gt;{item.label}&lt;/span&gt;
+                &lt;/button&gt;
+              ))}
+            &lt;/nav&gt;
+          &lt;/div&gt;
+          
+          &lt;div className=&quot;flex items-center gap-3&quot;&gt;
+            &lt;button 
+              onClick={() =&gt; setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className={`p-2 rounded-lg transition-colors ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-gray-100'}`}
+              title=&quot;Toggle Theme&quot;
+            &gt;
+              {theme === 'dark' ? (
+                &lt;Sun className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`} /&gt;
+              ) : (
+                &lt;Moon className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`} /&gt;
+              )}
+            &lt;/button&gt;
+            &lt;button className={`p-2 rounded-lg transition-colors relative ${theme === 'dark' ? 'hover:bg-slate-800' : 'hover:bg-gray-100'}`}&gt;
+              &lt;Bell className={`w-5 h-5 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`} /&gt;
+              &lt;span className=&quot;absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full&quot;&gt;&lt;/span&gt;
+            &lt;/button&gt;
+            
+            {isAuthenticated ? (
+              &lt;&gt;
+                &lt;button className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${theme === 'dark' ? 'bg-slate-800 hover:bg-slate-700' : 'bg-gray-200 hover:bg-gray-300'}`}&gt;
+                  &lt;Users className=&quot;w-4 h-4&quot; /&gt;
+                  &lt;span&gt;Admin&lt;/span&gt;
+                &lt;/button&gt;
+                &lt;button className=&quot;flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 hover:opacity-90 rounded-lg transition-opacity text-white&quot; onClick={handleLogout}&gt;
+                  &lt;LogOut className=&quot;w-4 h-4&quot; /&gt;
+                  &lt;span&gt;Logout&lt;/span&gt;
+                &lt;/button&gt;
+              &lt;/&gt;
+            ) : (
+              &lt;button 
+                className=&quot;flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-cyan-500 hover:opacity-90 rounded-lg transition-opacity text-white&quot; 
+                onClick={() =&gt; setIsAuthenticated(false)}
+              &gt;
+                &lt;Lock className=&quot;w-4 h-4&quot; /&gt;
+                &lt;span&gt;Login&lt;/span&gt;
+              &lt;/button&gt;
+            )}
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/header&gt;
+
+      &lt;main className=&quot;flex-1 overflow-y-auto p-8&quot;&gt;
+        {currentPage === 'home' &amp;&amp; &lt;HomePage /&gt;}
+        {currentPage === 'analytics' &amp;&amp; &lt;AnalyticsPage /&gt;}
+        {currentPage === 'reports' &amp;&amp; &lt;ReportsPage /&gt;}
+        {currentPage === 'admin' &amp;&amp; &lt;AdminPage /&gt;}
+      &lt;/main&gt;
+
+      &lt;footer className={`${theme === 'dark' ? 'bg-gradient-to-r from-slate-900 via-purple-900/10 to-slate-900 border-slate-700' : 'bg-gradient-to-r from-gray-50 via-purple-50 to-gray-50 border-gray-200'} backdrop-blur-sm border-t px-8 py-4`}&gt;
+        &lt;div className=&quot;flex items-center justify-between&quot;&gt;
+          &lt;div className=&quot;flex items-center gap-6&quot;&gt;
+            &lt;div className=&quot;flex items-center gap-2&quot;&gt;
+              &lt;div className=&quot;relative&quot;&gt;
+                &lt;div className=&quot;absolute inset-0 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-lg blur-md opacity-50&quot;&gt;&lt;/div&gt;
+                &lt;div className={`relative px-3 py-1 rounded-lg font-bold text-sm ${theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-white text-gray-900'} border-2 border-purple-500/30`}&gt;
+                  Eco&lt;span className=&quot;text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-cyan-500&quot;&gt;Orbit&lt;/span&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+              &lt;span className=&quot;text-xs opacity-75&quot;&gt;© 2025&lt;/span&gt;
+            &lt;/div&gt;
+            
+            &lt;div className={`h-8 w-px ${theme === 'dark' ? 'bg-slate-700' : 'bg-gray-300'}`}&gt;&lt;/div&gt;
+            
+            &lt;div className=&quot;flex items-center gap-4 text-xs&quot;&gt;
+              &lt;a href=&quot;mailto:<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="ed8c9f848b9881849e818c80808c858483dddcad8a808c8481c38e8280">[email&#160;protected]</a>&quot; className={`flex items-center gap-1.5 transition-colors ${theme === 'dark' ? 'hover:text-purple-400' : 'hover:text-purple-600'}`}&gt;
+                &lt;span className=&quot;w-1.5 h-1.5 rounded-full bg-purple-500&quot;&gt;&lt;/span&gt;
+                <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="4425362d2231282d3728252929252c2d2a7475042329252d286a272b29">[email&#160;protected]</a>
+              &lt;/a&gt;
+              &lt;a href=&quot;tel:+8801709764081&quot; className={`flex items-center gap-1.5 transition-colors ${theme === 'dark' ? 'hover:text-cyan-400' : 'hover:text-cyan-600'}`}&gt;
+                &lt;span className=&quot;w-1.5 h-1.5 rounded-full bg-cyan-500&quot;&gt;&lt;/span&gt;
+                +880 1709-764081
+              &lt;/a&gt;
+              &lt;span className={`flex items-center gap-1.5 ${theme === 'dark' ? 'text-slate-400' : 'text-gray-600'}`}&gt;
+                &lt;span className=&quot;w-1.5 h-1.5 rounded-full bg-green-500&quot;&gt;&lt;/span&gt;
+                Dhaka, Bangladesh
+              &lt;/span&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+          
+          &lt;div className=&quot;flex items-center gap-3 text-xs&quot;&gt;
+            &lt;a href=&quot;#&quot; className={`px-3 py-1.5 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-gray-200 text-gray-600 hover:text-gray-900'}`}&gt;
+              Privacy
+            &lt;/a&gt;
+            &lt;a href=&quot;#&quot; className={`px-3 py-1.5 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-gray-200 text-gray-600 hover:text-gray-900'}`}&gt;
+              Terms
+            &lt;/a&gt;
+            &lt;a href=&quot;#&quot; className={`px-3 py-1.5 rounded-md transition-all ${theme === 'dark' ? 'hover:bg-slate-800 text-slate-400 hover:text-white' : 'hover:bg-gray-200 text-gray-600 hover:text-gray-900'}`}&gt;
+              Docs
+            &lt;/a&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/footer&gt;
+    &lt;/div&gt;
+  );
+}</pre>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"9c3beb72fc3c428398d3316e23fdbcd0","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
